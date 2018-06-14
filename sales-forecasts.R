@@ -94,7 +94,10 @@ sales_lambda <- BoxCox.lambda(ts[,"SALES"])
 naiveSALES <- naive(train[,"SALES"], h = 60, lambda = sales_lambda)
 naive_plot <- autoplot(naiveSALES) + 
               forecast::autolayer(test[,"SALES"], series = "Test data") +
-              labs(x = "Year" , y = "Retail Sales (in billions)") +
+              labs(title = "Naive Forecast",
+                   x = "Year" , 
+                   y = "Retail Sales (in billions)", 
+                   fill = "confidence interval") +
               test_xlim +
               title_center 
 naive_plot
@@ -117,9 +120,12 @@ accuracy(naiveSALES, test[,"SALES"])
 # Holt-Winters Forecast ---------------------------------------------------
 ### Plot
 hwSALES <- hw(train[,"SALES"], h = 60, seasonal = "multiplicative")
-hw_plot <- autoplot(hwSALES) + 
+hw_plot <- autoplot(hwSALES, series = "Forecast") + 
            forecast::autolayer(test[,"SALES"], series = "Test data") +
-           labs(x = "Year" , y = "Retail Sales (in billions)") +
+           labs(title = "Holt-Winters Multiplicative Forecasts",
+                x = "Year" , 
+                y = "Retail Sales (in billions)",
+                fill = "confidence interval") +
            test_xlim +
            title_center 
 hw_plot
@@ -142,7 +148,10 @@ etsSALES <- ets(train[,"SALES"], lambda = sales_lambda)
 etsFCAST <- etsSALES %>% forecast(h = 60)
 ets_plot <- autoplot(etsFCAST) + 
             forecast::autolayer(test[,"SALES"], series = "Test data") +
-            labs(x = "Year" , y = "Retail Sales (in billions)") +
+            labs(title = "ETS(A,Ad,A) Forecast",
+                 x = "Year",
+                 y = "Retail Sales (in billions)",
+                 fill = "confidence interval") +
             test_xlim +
             title_center 
 ets_plot
@@ -167,7 +176,10 @@ arimaSALES <- auto.arima(train[,"SALES"], lambda = sales_lambda)
 arimaFCAST <- arimaSALES %>% forecast(h = 60)
 arima_plot <- arimaFCAST %>% autoplot() +
               autolayer(test[,"SALES"], series = "Test data") +
-              labs(x = "Year" , y = "Retail Sales (in billions)") +
+              labs(title = "ARIMA(2,1,1)(1,1,2)[12] Forecast",
+                   x = "Year", 
+                   y = "Retail Sales (in billions)",
+                   fill = "confidence interval") +
               test_xlim +
               title_center 
 arima_plot
@@ -191,7 +203,10 @@ harmonicFCAST <- harmonicSALES %>% forecast(xreg = fourier(train[,"SALES"], K = 
 
 harmonic_plot <- harmonicFCAST %>% autoplot() +
                  autolayer(test[,"SALES"], series = "Test data") +
-                 labs(x = "Year" , y = "Retail Sales (in billions)") +
+                 labs(title = "Harmonic Forecast with Max Fourier Order = 6",
+                      x = "Year" , 
+                      y = "Retail Sales (in billions)",
+                      fill = "confidence interval") +
                  test_xlim +
                  title_center 
 harmonic_plot
@@ -206,7 +221,10 @@ tbatsSALES <- tbats(train[,"SALES"])
 tbatsFCAST <- tbatsSALES %>% forecast(h = 60)
 tbats_plot <- tbatsFCAST %>% autoplot() +
               autolayer(test[,"SALES"], series = "Test data") +
-              labs(x = "Year" , y = "Retail Sales (in billions)") +
+              labs(title = "TBATS Forecast",
+                   x = "Year" ,
+                   y = "Retail Sales (in billions)",
+                   fill = "confidence interval") +
               test_xlim +
               title_center 
 tbats_plot
@@ -255,7 +273,12 @@ xregFCAST <- xregSALES %>% forecast(h = 60, xreg = cpiFCAST$mean)
 ## Plot 
 xreg_plot <- xregFCAST %>% autoplot() +
              autolayer(test[,"SALES"], series = "Test data") +
-             labs(x = "Year" , y = "Retail Sales (in billions)") +
+             labs(title = "Forecast with CPI Exogenous Regressor",
+                  x = "Year" , 
+                  y = "Retail Sales (in billions)",
+                  fill = "confidence interval",
+                  caption = "Forecast values for CPI based on ARIMA(0,1,3)(0,0,1)[12] model") +
+             theme(plot.caption = element_text(size = 6)) +
              test_xlim +
              title_center 
 xreg_plot
