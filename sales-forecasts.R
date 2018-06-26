@@ -15,7 +15,6 @@ library(RColorBrewer)
 library(Quandl)
 Quandl.api_key("k38BQJo9uik-sgVzgvN7")
 
-
 # Import Data -------------------------------------------------------------
 ### Monthly sales, set to read in billions
 sales <- ts(read.csv("retail_sales.csv")[2], start = c(1992,1), frequency = 12)
@@ -69,25 +68,14 @@ plot_seasonality <- ggseasonplot(ts[,"SALES"], col = seasonplot_colors) +
 print(plot_seasonality)
 ggsave("plot_sales-seasonality.png")
 
-## ACF and PACF
-png("plot-sales_ACF2.png")
-acf2(ts[, "SALES"], main = "ACF and PACF of Retail Sales Time Series")
-dev.off()
-
-## Unit root tests
-adf.test(ts[,"SALES"])
-kpss.test(ts[,"SALES"])
-adf.test(diff(ts[,"SALES"]))
-
 # Forecasting Set-up ------------------------------------------------------
+### Define Box Cox lambda parameter
+sales_lambda <- BoxCox.lambda(ts[,"SALES"])
+
 ### Split into training/test sets
 time(ts)
 train <- window(ts, end = 2012.917)
 test  <- window(ts, start = 2013.000)
-
-
-### Define Box Cox lambda parameter
-sales_lambda <- BoxCox.lambda(ts[,"SALES"])
 
 # Naive Forecast ----------------------------------------------------------
 ### Plot
@@ -100,14 +88,14 @@ naive_plot <- autoplot(naiveSALES) +
                    fill = "confidence interval") +
               test_xlim +
               title_center 
-naive_plot
+print(naive_plot)
 ggsave("plot-naive_forecast.png")
 
 ### Forecast Accuracy
 accuracy(naiveSALES, test[,"SALES"])
 
 ### TS cross-validation code.
-## Define TS CV RMSE function
+## Define TS CV MAE function
 # ROOTsq <- function(u){sqrt(u^2)}
 
 ## TSCV
@@ -128,7 +116,7 @@ hw_plot <- autoplot(hwSALES, series = "Forecast") +
                 fill = "confidence interval") +
            test_xlim +
            title_center 
-hw_plot
+print(hw_plot)
 ggsave("plot-hw_forecast.png")
 
 ### Forecast Accuracy
@@ -154,7 +142,7 @@ ets_plot <- autoplot(etsFCAST) +
                  fill = "confidence interval") +
             test_xlim +
             title_center 
-ets_plot
+print(ets_plot)
 ggsave("plot-ets_forecast.png")
 
 ### Forecast Accuracy
@@ -171,8 +159,24 @@ accuracy(etsFCAST, test[,"SALES"])
 
 
 # ARIMA Forecast ----------------------------------------------------------
-### Plot
+### ACF and PACF
+png("plot-sales_ACF2.png")
+acf2(ts[, "SALES"], main = "ACF and PACF of Retail Sales Time Series")
+dev.off()
+
+### Unit root tests
+adf.test(ts[,"SALES"])
+kpss.test(ts[,"SALES"])
+adf.test(diff(ts[,"SALES"]))
+
+### Fit ARIMA and check diagnostics
 arimaSALES <- auto.arima(train[,"SALES"], lambda = sales_lambda)
+png("plot-arima_residuals.png")
+checkresiduals(arimaSALES)
+dev.off()
+mean(residuals(arimaSALES))
+
+### Plot forecast
 arimaFCAST <- arimaSALES %>% forecast(h = 60)
 arima_plot <- arimaFCAST %>% autoplot() +
               autolayer(test[,"SALES"], series = "Test data") +
@@ -182,12 +186,44 @@ arima_plot <- arimaFCAST %>% autoplot() +
                    fill = "confidence interval") +
               test_xlim +
               title_center 
-arima_plot
+print(arima_plot)
 ggsave("plot-arima_forecast.png")
 
 ### Forecast Accuracy
 accuracy(arimaFCAST, test[,"SALES"])
 
+### Find alternative model that passes Box-Ljung
+### Takes a long time to run, uncomment to include in file
+for (i in 5:10) {
+  for (k in 2:4) {
+    arimaBL <- forecast::Arima(train[,"SALES"],
+                              order = c(i,1,1), seasonal = list(order = c(k,1,2), period = 12))
+    checkresiduals(arimaBL)
+  }
+}
+
+# Model
+# arimaBL <- forecast::Arima(train[,"SALES"], 
+#                          order = c(8,1,1), seasonal = list(order = c(3,1,2), period = 12))
+# png("plot-arima_residuals-passesBL.png")
+# checkresiduals(arimaBL)
+# dev.off()
+
+# Plot
+arimaFCASTBL <- arimaBL %>% forecast(h = 60)
+arima_plotBL <- arimaFCASTBL %>% autoplot() +
+  autolayer(test[,"SALES"], series = "Test data") +
+  labs(title = "ARIMA(8,1,1)(3,1,2)[12] Forecast",
+       x = "Year", 
+       y = "Retail Sales (in billions)",
+       fill = "confidence interval") +
+  test_xlim +
+  title_center 
+print(arima_plotBL)
+ggsave("plot-arima_forecastBLtest.png")
+
+# Forecast Accuracy
+accuracy(arimaFCASTBL, test[,"SALES"])
 
 # Harmonic Regression Forecast --------------------------------------------
 ### Find max order of Fourier terms
@@ -209,7 +245,7 @@ harmonic_plot <- harmonicFCAST %>% autoplot() +
                       fill = "confidence interval") +
                  test_xlim +
                  title_center 
-harmonic_plot
+print(harmonic_plot)
 ggsave("plot-harmonic_forecast.png")
 
 ### Forecast Accuracy
@@ -217,6 +253,7 @@ accuracy(harmonicFCAST, test[,"SALES"])
 
 
 # TBATS Forecast ----------------------------------------------------------
+### Plot
 tbatsSALES <- tbats(train[,"SALES"])
 tbatsFCAST <- tbatsSALES %>% forecast(h = 60)
 tbats_plot <- tbatsFCAST %>% autoplot() +
@@ -227,7 +264,7 @@ tbats_plot <- tbatsFCAST %>% autoplot() +
                    fill = "confidence interval") +
               test_xlim +
               title_center 
-tbats_plot
+print(tbats_plot)
 ggsave("plot-tbats_forecast.png")
 
 ### Forecast Accuracy
@@ -243,7 +280,7 @@ CPIplot <- autoplot(ts[,"CPI"], ts.colour = "black") +
                 y = "Consumer Price Index") + 
            theme_bw() +
            title_center
-CPIplot
+print(CPIplot)
 ggsave("plot-CPI_series.png")
 
 ## ACF/PACF
@@ -259,12 +296,12 @@ ccf2(ts[,"CPI"], diff(ts[,"SALES"]))
 
 
 #### Model and forecast
-## Fit XREG model
-xregSALES <- auto.arima(train[,"SALES"], d = 1 , xreg = train[,"CPI"])
-
 ## Define forecast values for CPI as XREG
-cpiARIMA <- auto.arima(train[,"CPI"])
-cpiFCAST <- forecast(cpiARIMA, h = 60)
+cpiFCAST <- auto.arima(train[,"CPI"]) %>% forecast(h = 60)
+str(cpiFCAST)
+
+## Fit XREG model
+xregSALES <- auto.arima(train[,"SALES"], d = 1, xreg = train[,"CPI"])
 
 ## Forecast sales using CPI ARIMA forecast values as XREG
 xregFCAST <- xregSALES %>% forecast(h = 60, xreg = cpiFCAST$mean)
@@ -281,8 +318,9 @@ xreg_plot <- xregFCAST %>% autoplot() +
              theme(plot.caption = element_text(size = 6)) +
              test_xlim +
              title_center 
-xreg_plot
+print(xreg_plot)
 ggsave("plot-xreg_forecast.png")
 
 ## Forecast Accuracy
 accuracy(xregFCAST, test[,"SALES"])
+
