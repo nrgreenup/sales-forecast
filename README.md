@@ -2,7 +2,7 @@
 Description: I examine the characteristics of monthly time series data on national retail sales (in the US). I then split the time series into training and testing subsets and evaluate four forecasting models: naive, Holt-Winters exponential smoothing, ARIMA, and dynamic regression using the Consumer Price Index as an exogenous regressor. 
 
 ## Analytical Report
-The information in the README.md file below contains instructions and helpful information for replicating all analyses. For a detailed step-by-step report that walks through the analytical process, see visit my [website](https://nrgreenup.github.io/Retail-Sales-Forecasts/).
+The information in the README.md file below contains instructions and helpful information for replicating all analyses. For a detailed step-by-step report that walks through the analytical process, please visit my [website](https://nrgreenup.github.io/Retail-Sales-Forecasts/).
 
 ## Necessary Software 
 You will need the following software and R packages installed to run code files and reproduce analyses.
